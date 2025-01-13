@@ -1,3 +1,4 @@
+
 from config.config import Config
 import aiohttp
 from aiohttp import ClientTimeout
@@ -7,7 +8,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 async def get_client_history(lead_id: str) -> str:
-
     url = f'{Config.URL}/{lead_id}'
     headers = {
         'Authorization': Config.SEND_ID,
@@ -24,6 +24,7 @@ async def get_client_history(lead_id: str) -> str:
         custom_fields = lead_data.get('custom_fields_values', [])
         if not isinstance(custom_fields, list):
             custom_fields = []
+
 
         async def get_field_value(field_name):
             return next(
@@ -45,7 +46,7 @@ async def get_client_history(lead_id: str) -> str:
         pay_type_value = await get_field_value('Способ Оплаты')
         price_value = await get_field_value('Чек')
 
-        # Формируем строку результата
+        # Formulate result string
         return (
             f'Имя: {name_value or "не указано"}\n'
             f'Номер: {number_value or "не указано"}\n'
@@ -56,7 +57,6 @@ async def get_client_history(lead_id: str) -> str:
             f'Способ Оплаты: {pay_type_value or "не указано"}\n'
             f'Чек: {price_value or "не указано"}\n'
         )
-
 
     except aiohttp.ClientResponseError as http_err:
         logger.error(f'HTTP error occurred: {http_err}')

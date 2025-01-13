@@ -1,12 +1,17 @@
+import re
+import aiohttp
+import logging
+import requests
+from icecream import ic
 from config.config import Config
 from pathlib import Path
-from  icecream import ic
-import requests
-import re
 
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent
 PHOTOS_DIR = BASE_DIR / "photos"
+
 async def send_message(amojo_id, chat_token, message, chat_id , photo_id):
     """
     Отправляет сообщение с возможными фотографиями.
@@ -63,9 +68,12 @@ async def send_message(amojo_id, chat_token, message, chat_id , photo_id):
 
 
             # Отправка запроса
-            response = requests.post(Config.MESSAGE_SAND_URL, data=data, files=None)
-            response.raise_for_status()
-            ic("Сообщение успешно отправлено:", response.json())
+            async with aiohttp.ClientSession() as session:
+                async with session.post(Config.MESSAGE_SAND_URL, data=data) as response:
+                    if response.status == 200:
+                        logger.info("Сообщение успешно отправлено")
+                    else:
+                        response.raise_for_status()
 
 
     except Exception as e:

@@ -1,75 +1,64 @@
 import re
-from status_crm.update_lead_status import update_lead_status
-import requests
+import aiohttp
 from config.config import Config
+from status_crm.update_lead_status import update_lead_status
 
-async def change_status(lead_id: str, response: str) -> None:
-
-    # URL и заголовки запроса
-    url = f'{Config.URL}/{lead_id}'
+async def change_status(lead_id: str, response_text: str) -> None:
+    url = f"{Config.URL}/{lead_id}"
     headers = {
         'Authorization': Config.SEND_ID,
         'Content-Type': 'application/json'
     }
-    match = re.search(r'\b\d{8}\b', response)
-    new_status_id = int(match.group(0))
+
+    try:
+
+        name = re.search(r"Имя:\s*([^|]+)", response_text)
+        number = re.search(r"Номер:\s*([^|]+)", response_text)
+        goods = re.search(r"Товар:\s*([^|]+)", response_text)
+        address = re.search(r"Адрес:\s*([^|]+)", response_text)
+        delivery_time = re.search(r"Время Доставки:\s*([^|]+)", response_text)
+        delivery_date = re.search(r"Дата Доставки:\s*([^|]+)", response_text)
+        pay_type = re.search(r"Способ Оплаты:\s*([^|]+)", response_text)
+        price = re.search(r"Чек:\s*([^|]+)", response_text)
+        match_status = re.search(r'\b\d{8}\b', response_text)
+
+        if not all([name, number, goods, address, delivery_time, delivery_date, pay_type, price,match_status]):
+            raise ValueError("Missing required data in response text.")
 
 
+        name = name.group(1).strip()
+        number = number.group(1).strip()
+        goods = goods.group(1).strip()
+        address = address.group(1).strip()
+        delivery_time = delivery_time.group(1).strip()
+        delivery_date = delivery_date.group(1).strip()
+        pay_type = pay_type.group(1).strip()
+        price = price.group(1).strip()
+        new_status_id = int(match_status.group(0))
 
 
-    name = re.search(r"Имя:\s*([^|]+)", response).group(1).strip()
-    number = re.search(r"Номер:\s*([^|]+)", response).group(1).strip()
-    goods = re.search(r"Товар:\s*([^|]+)", response).group(1).strip()
-    address = re.search(r"Адрес:\s*([^|]+)", response).group(1).strip()
-    delivery_time = re.search(r"Время Доставки:\s*([^|]+)", response).group(1).strip()
-    delivery_date = re.search(r"Дата Доставки:\s*([^|]+)", response).group(1).strip()
-    pay_type = re.search(r"Способ Оплаты:\s*([^|]+)", response).group(1).strip()
-    price = re.search(r"Чек:\s*([^|]+)", response).group(1).strip()
+        data = {
+            'custom_fields_values': [
+                {'field_id': 1000057, 'values': [{'value': name}]},
+                {'field_id': 1000059, 'values': [{'value': number}]},
+                {'field_id': 1000061, 'values': [{'value': goods}]},
+                {'field_id': 1000063, 'values': [{'value': address}]},
+                {'field_id': 1000065, 'values': [{'value': delivery_time}]},
+                {'field_id': 1000067, 'values': [{'value': delivery_date}]},
+                {'field_id': 1000069, 'values': [{'value': pay_type}]},
+                {'field_id': 1000071, 'values': [{'value': price}]}
+            ]
+        }
 
-    # Данные для обновления кастомных полей
-    data = {
-        'custom_fields_values': [
-            {
-                'field_id': 1000057,  # ID поля "Имя"
-                'values': [{'value': name}]  # Новое значение для поля "Имя"
-            },
-            {
-                'field_id': 1000059,  # ID поля "Номер"
-                'values': [{'value': number}]
-            },
-            {
-                'field_id': 1000061,  # ID поля "Товар"
-                'values': [{'value': goods}]
-            },
-            {
-                'field_id': 1000063,  # ID поля "Адрес"
-                'values': [{'value': address}]
-            },
-            {
-                'field_id': 1000065,  # ID поля "Время Доставки"
-                'values': [{'value': delivery_time}]
-            },
-            {
-                'field_id': 1000067,  # ID поля "Дата Доставки"
-                'values': [{'value': delivery_date}]
-            },
-            {
-                'field_id': 1000069,  # ID поля "Способ Оплаты"
-                'values': [{'value': pay_type}]
-            },
-            {
-                'field_id': 1000071,  # ID поля "Чек"
-                'values': [{'value': price}]
-            }
-        ]
-    }
 
-    response = requests.patch(url, headers=headers, json=data)
-    await update_lead_status(lead_id, new_status_id)
-    # Проверка результата
-    if response.status_code == 200:
-        print('Кастомные поля успешно обновлены.')
-    else:
-        print(f'Ошибка при обновлении кастомных полей: {response.status_code}')
-        print(response.json())  # Вывод подробностей ошибки
+        async with aiohttp.ClientSession() as session:
+            async with session.patch(url, headers=headers, json=data) as response:
+                if response.status == 200:
+                    print("Custom fields successfully updated.")
+                else:
+                    print(f"Error updating custom fields: {response.status}")
+                    print(await response.json())
 
+        await update_lead_status(lead_id, new_status_id)
+    except Exception as e:
+        print(f"Error in change_status: {e}")

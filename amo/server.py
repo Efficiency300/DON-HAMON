@@ -42,7 +42,7 @@ async def client_data(r: Request):
         attachment_link = parsed_data.get("message[add][0][attachment][link]", [None])[0]
         result = attachment_link if attachment_type in ["voice", "picture"] else ""
 
-        if not chat_id or (not message_text and not attachment_link):
+        if not chat_id or (not message_text and not  attachment_link):
             return {"error": "Invalid data"}
 
         # Проверка статуса пользователя

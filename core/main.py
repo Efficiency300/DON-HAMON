@@ -84,7 +84,7 @@ async def process_messages(chat_id: str, entity_id: str) -> None:
         # Отправка в LLM
         user_input = f"ответ клиента: {user_input}"
         ai_answer, list_ai , photo_id= await thread(user_input, chat_id)
-        clean_text = MarkdownProcessor.strip_markdown(ai_answer)
+        clean_text = await MarkdownProcessor.strip_markdown(ai_answer)
         print(photo_id)
         logger.info(f"Ответ LLM: {clean_text}")
 

@@ -19,7 +19,7 @@ class PhotoDescription(BaseModel):
 class PhotoService:
     def __init__(self):
         # Предполагаем, что ChatOpenAI уже асинхронно совместим (уточняйте документацию).
-        self.model = ChatOpenAI(model="gpt-4o")  # Убедитесь, что модель указана правильно
+        self.model = ChatOpenAI(model_name="gpt-4o")  # Убедитесь, что модель указана правильно
         self.parser = PydanticOutputParser(pydantic_object=PhotoDescription)
         # Если вам нужно что-то более гибкое, посмотрите готовые асинхронные механизмы LangChain.
         self.prompt = ChatPromptTemplate.from_messages([

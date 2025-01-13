@@ -9,7 +9,7 @@ class MarkdownProcessor:
     """
 
     @staticmethod
-    def strip_markdown(text):
+    async def strip_markdown(text):
         """
         Удаляет Markdown-разметку из текста.
         """
