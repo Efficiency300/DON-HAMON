@@ -1,17 +1,15 @@
 import json
 from asyncio import Lock
-from datetime import datetime
 from icecream import ic
 from openai import AsyncOpenAI
 from config.config import Config
 from pathlib import Path
 from services.promt import promt
-from utils.JsonDataBase import JSONDatabase
+from handlers.JsonDataBase import JSONDatabase
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 talk_id_json = f"{BASE_DIR}/config/thread_id.json"
 file_lock = Lock()
-
 db = JSONDatabase(talk_id_json)
 
 
@@ -63,7 +61,6 @@ tools = [
     },
 ]
 
-
 async def thread(message_text: str, chat_id: str) -> tuple[str, dict | None, list | None]:
     try:
         async with file_lock:
@@ -101,7 +98,7 @@ async def thread(message_text: str, chat_id: str) -> tuple[str, dict | None, lis
 
                 for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                     try:
-                        tool_name = tool_call.function.name
+
                         tool_args = json.loads(tool_call.function.arguments)
 
                         if "item_number" in tool_args and "name" in tool_args:
