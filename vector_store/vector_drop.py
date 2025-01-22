@@ -3,12 +3,16 @@ import json
 import openai
 from pathlib import Path
 from config.config import Config
+import asyncio
 
 client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
 
 async def drop_base():
-    file_drop_path = Path("file_drop.json")
-    file_json_path = Path("file.json")
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    file_drop_path = BASE_DIR / "vector_store/file_drop.json"
+    file_json_path = BASE_DIR / "vector_store/file.json"
+    file_drop_path = Path(file_drop_path)
+    file_json_path = Path(file_json_path)
 
     # Если file_drop.json не существует, копируем данные из file.json в file_drop.json
     if not file_drop_path.exists():
@@ -49,4 +53,4 @@ async def drop_base():
 
 
 
-
+asyncio.run(drop_base())

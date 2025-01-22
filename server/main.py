@@ -7,8 +7,8 @@ from status_crm.stage_info import stage_info
 
 
 app = FastAPI()
-AI_OTVECHAET = 72349674
-NERAZOBRANOE = 72349670
+AI_OTVECHAET = 73108018
+NERAZOBRANOE = 73108014
 buffer_manager = BufferManager()
 
 @app.post("/")

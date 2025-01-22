@@ -19,8 +19,8 @@ TALK_ID_JSON_PATH = BASE_DIR / "config/talk_id.json"
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-AI_OTVECHAET = 72349674
-NERAZOBRANOE = 72349670
+AI_OTVECHAET = 73108018
+NERAZOBRANOE = 73108014
 class BufferManager:
     def __init__(self, rand_first=8):
         self.user_buffers: Dict[str, List[Dict[str, str] | str]] = defaultdict(list)
@@ -85,7 +85,7 @@ class BufferManager:
                 await asyncio.sleep(10)
                 await change_funnel(entity_id, int(target_id['funnel']), int(target_id['id']))
                 resuts = await stage_info(entity_id)
-                if resuts in [72349674]:
+                if resuts in [73108018]:
                     check_result = await self.check_and_return(talk_id, current_time, result, entity_id)
                     if check_result:
                         return check_result

@@ -21,14 +21,18 @@ TALK_ID_JSON_PATH = BASE_DIR / "Service_Account.json"
 gc = gspread.service_account(filename=TALK_ID_JSON_PATH)
 
 
+
+
 async def add_file_to_openai(path, name):
     async with aiofiles.open(path, 'rb') as f:
         file_content = await f.read()
-        response = await asyncio.to_thread(client.files.create, file=(name + ".txt", file_content), purpose='assistants')
+        response = await asyncio.to_thread(client.files.create, file=(name + ".txt", file_content),
+                                           purpose="assistants")
         return response.id
 
 
-async def write_json(file_path: str, data: dict) -> None:
+# Замена использования 'path()' на правильное использование 'os.path.splitext'
+async def write_json(file_path: str, data: str) -> None:
     max_retries = 5
     retry_delay = 2
 
@@ -40,14 +44,15 @@ async def write_json(file_path: str, data: dict) -> None:
 
             # Записываем данные в файл в формате JSON
             async with aiofiles.open(file_path, mode='w', encoding='utf-8') as txt_file:
-                await txt_file.write(json.dumps(data, ensure_ascii=False, indent=4) + "\n")
+                await txt_file.write(data)
 
             # Добавляем файл в OpenAI через API
             file_id = await add_file_to_openai(file_path, os.path.splitext(file_path)[0])
 
             # Создаем задачу для векторного хранилища OpenAI
             vector_store_task = asyncio.create_task(
-                asyncio.to_thread(client.beta.vector_stores.files.create_and_poll, vector_store_id=Config.VECTOR_ID, file_id=file_id)
+                asyncio.to_thread(client.beta.vector_stores.files.create_and_poll,
+                                  vector_store_id="vs_j4fGdmZzDMWR5yqyPuoK9aeQ", file_id=file_id)
             )
 
             # Работаем с локальным JSON (файлом данных) с блокировкой
@@ -89,42 +94,40 @@ async def write_json(file_path: str, data: dict) -> None:
                 ic("Максимальное количество попыток достигнуто. Операция завершена с ошибкой.")
 
 
+# Функция для получения данных продуктов из Google Sheets
 async def fetch_product_records():
-    wks = gc.open('DonHamon').sheet1
-    expected_headers = ["Продукт", "Цена", "Категория", "ID фото", "Примечания", "без свинины", "ед.им" ,"количество кг"]
-
     try:
-        # Получение всех записей с использованием expected_headers
-        records = await asyncio.to_thread(wks.get_all_records, expected_headers=expected_headers)
+        wks = gc.open('DonHamon').sheet1
+        # Получение всех записей
+        records = await asyncio.to_thread(wks.get_all_records)
+
+        # Обработка записей
+        products_list = format_product_data_as_text(records)
+        print(products_list)
+        await write_json("product_list.txt", products_list)
+        return products_list
 
     except GSpreadException as e:
         ic(f"Ошибка при получении записей: {e}")
         return []
 
-    # Преобразование данных в нужный формат
-    products_list = parse_product_data(records)
-    ic(products_list)
-    await write_json("product_list.json", products_list)  # Передача списка продуктов в функцию write_json
-    return products_list
 
-# Функция для парсинга данных продуктов
-def parse_product_data(records):
-    products_list = []
-    for record in records:
-        ic(record)
-        product_dict = {
-            "Продукт": record.get("Продукт", ""),
-            "Цена": record.get("Цена", ""),
-            "Категория": record.get("Категория", ""),
-            "Примечания": record.get("Примечания", ""),
-            "наличение свинины": record.get("без свинины", ""),
-            "Количество кг": record.get("количество кг", ""),
-            "Единица измерения": record.get("ед.им", ""),
-            "ID фото": record.get("ID фото", "")
-        }
-        products_list.append(product_dict)
-    return products_list
+# Функция для форматирования данных в текстовый формат
+def format_product_data_as_text(products_list):
+    formatted_text = ""
+    for product in products_list:
+        formatted_text += (
+            f"'img_id': img_{product['ID фото']} ,\n"
+            f"'Единица измерения': {product['ед.им']},\n"
+            f"'Категория': {product['Категория']},\n"
+            f"'Количество кг': {product['количество кг']},\n"
+            f"'Примечания': {product['Примечания']},\n"
+            f"'Продукт': {product['Продукт']},\n"
+            f"'Цена': {product['Цена']},\n"
+            f"'наличие свинины': {product['без свинины']},\n\n"
+        )
+    return formatted_text
 
 
-
-asyncio.run(fetch_product_records())
+if __name__ == "__main__":
+    asyncio.run(fetch_product_records())
