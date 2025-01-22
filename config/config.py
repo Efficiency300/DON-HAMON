@@ -16,4 +16,6 @@ class Config:
     AMO_PASSWORD = os.getenv("AMO_PASSWORD")
     AMO_EMAIL = os.getenv("AMO_EMAIL")
     URL = os.getenv("URL")
-
+    VECTOR_ID = os.getenv("VECTOR_ID")
+    AI_WORKS = os.getenv("AI_WORKS")
+    UNSORTED = os.getenv("UNSORTED")

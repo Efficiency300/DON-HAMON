@@ -1,17 +1,15 @@
 import json
 from asyncio import Lock
-from datetime import datetime
 from icecream import ic
 from openai import AsyncOpenAI
 from config.config import Config
 from pathlib import Path
 from services.promt import promt
-from utils.JsonDataBase import JSONDatabase
+from handlers.JsonDataBase import JSONDatabase
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 talk_id_json = f"{BASE_DIR}/config/thread_id.json"
 file_lock = Lock()
-
 db = JSONDatabase(talk_id_json)
 
 
@@ -20,9 +18,9 @@ tools = [
     {
         "type": "file_search",
         "file_search": {
-            "max_num_results": 10,  # Example configuration
+            "max_num_results": 15,  # Example configuration
             "ranking_options": {
-                "score_threshold": 0.1  # Example threshold
+                "score_threshold": 0.3  # Example threshold
             }
         }
     },
@@ -44,25 +42,24 @@ tools = [
         "type": "function",
         "function": {
             "name": "send_photo_and_description",
-            "description": "Отправляет фото товара из базы по его уникальному номеру",
+            "description": "Отправляет фото товара по его img_id. Делай это всегда когда клиент спрашивает какой то товар, исключение если это не товар который тебе оптравили. Тогда ты не запускаешь эту функцию. Данные основаны на файлах которые тебе предоставили. Ищи данные в product_list.txt",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "item_number": {
+                    "img_id": {
                         "type": "string",
-                        "description": "ID фото"
+                        "description": "img_id товара. Используй те данные которые тебе предоставили в файлах  product_list.txt"
                     },
                     "name": {
                         "type": "string",
-                        "description": "название продукта"
+                        "description": "Название Продукта"
                     }
                 },
-                "required": ["item_number" , "name"]
+                "required": ["img_id" , "name"]
             }
         }
     },
 ]
-
 
 async def thread(message_text: str, chat_id: str) -> tuple[str, dict | None, list | None]:
     try:
@@ -101,13 +98,14 @@ async def thread(message_text: str, chat_id: str) -> tuple[str, dict | None, lis
 
                 for tool_call in run.required_action.submit_tool_outputs.tool_calls:
                     try:
-                        tool_name = tool_call.function.name
+
                         tool_args = json.loads(tool_call.function.arguments)
 
-                        if "item_number" in tool_args and "name" in tool_args:
-                            numbers = tool_args['item_number']
+                        if "img_id" in tool_args and "name" in tool_args:
+                            numbers = tool_args['img_id']
+                            formatted_numbers = numbers.split("img_")[1]
                             name_of_product = tool_args['name']
-                            photo_id.append({"name": name_of_product, "photo_id": f"{numbers}.jpg"})
+                            photo_id.append({"name": name_of_product, "photo_id": f"{formatted_numbers}.jpg"})
                             result = "photo_send_sucsesfuly"
                             tool_outputs.append({
                                 "tool_call_id": tool_call.id,
