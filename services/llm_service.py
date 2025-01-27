@@ -25,18 +25,7 @@ tools = [
         }
     },
 
-    {
-        "type": "function",
-        "function": {
-            "name": "get_current_time",
-            "description": "Возвращает текущее время.",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    },
+
 
     {
         "type": "function",
